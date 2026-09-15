@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Lane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14120F;
+    --surface: #1D1912;
+    --surface-2: #26201A;
+    --ink: #EDE6D6;
+    --ink-dim: #A89A82;
+    --hairline: #35301F;
+    --brass: #D4A24C;
+    --ember: #C4553D;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif{ font-family: 'Fraunces', serif; }
+
+  /* ---------- Landing ---------- */
+  #landing{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 32px;
+  }
+  #landing .mark{
+    font-size: clamp(40px, 8vw, 72px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+    background: linear-gradient(180deg, var(--ink), var(--brass));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  #landing p{
+    color: var(--ink-dim);
+    max-width: 440px;
+    line-height: 1.6;
+    margin: 0 0 32px;
+  }
+  #landing .privacy-note{
+    font-size: 13px;
+    color: var(--ink-dim);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-top: 28px;
+    max-width: 420px;
+  }
+  .pick-btn{
+    background: var(--brass);
+    color: #1A1509;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .pick-btn:hover{ background: #E3B466; transform: translateY(-1px); }
+  #folder-input{ display:none; }
+  #landing .loading{ display:none; color: var(--ink-dim); margin-top: 20px; font-size: 14px; }
+  #landing .loading.active{ display:block; }
+
+  /* ---------- App shell ---------- */
+  #app{ display:none; min-height:100vh; }
+  #app.active{ display:flex; }
+
+  #rail{
+    width: 84px;
+    flex-shrink:0;
+    border-right: 1px solid var(--hairline);
+    padding: 20px 0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap: 4px;
+    overflow-y:auto;
+    position: sticky;
+    top:0;
+    height:100vh;
+  }
+  #rail button{
+    background:none;
+    border:none;
+    color: var(--ink-dim);
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    padding: 8px 0;
+    width: 100%;
+    cursor:pointer;
+  }
+  #rail button.current{ color: var(--brass); font-weight: 600; }
+
+  #main{ flex:1; min-width:0; }
+
+  header.top{
+    position: sticky;
+    top:0;
+    z-index: 5;
+    background: rgba(20,18,15,0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--hairline);
+    padding: 18px 28px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap: 16px;
+    flex-wrap:wrap;
+  }
+  header.top h1{
+    font-size: 20px;
+    margin:0;
+    font-weight: 500;
+  }
+  header.top .count{ color: var(--ink-dim); font-size: 13px; }
+
+  /* Flashback banner */
+  #flashback{
+    margin: 20px 28px 0;
+    border: 1px solid var(--ember);
+    background: linear-gradient(90deg, rgba(196,85,61,0.14), transparent);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display:none;
+  }
+  #flashback.active{ display:block; }
+  #flashback .fb-title{
+    font-family:'Fraunces', serif;
+    font-size: 17px;
+    color: var(--ember);
+    margin: 0 0 10px;
+  }
+  #flashback .fb-strip{
+    display:flex;
+    gap: 10px;
+    overflow-x:auto;
+    padding-bottom: 4px;
+  }
+  .fb-item{
+    flex-shrink:0;
+    width: 96px;
+    cursor:pointer;
+  }
+  .fb-item .thumb-wrap{
+    width:96px; height:96px;
+    border-radius: 8px;
+    overflow:hidden;
+    background: var(--surface-2);
+  }
+  .fb-item img, .fb-item video{ width:100%; height:100%; object-fit:cover; display:block; }
+  .fb-item .fb-label{ font-size: 11px; color: var(--ink-dim); margin-top: 4px; text-align:center; }
+
+  .month-section{ padding: 24px 28px 0; }
+  .month-section h2{
+    font-family:'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 12px;
+    position: sticky;
+    top: 62px;
+    background: var(--bg);
+    padding: 6px 0;
+    z-index: 3;
+  }
+  .month-section h2 .yr{ color: var(--brass); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 3px;
+  }
+  .cell{
+    position:relative;
+    aspect-ratio: 1/1;
+    background: var(--surface-2);
+    overflow:hidden;
+    cursor:pointer;
+  }
+  .cell img, .cell video{
+    width:100%; height:100%;
+    object-fit:cover;
+    display:block;
+    transition: transform .3s ease;
+  }
+  .cell:hover img, .cell:hover video{ transform: scale(1.04); }
+  .cell .vid-badge{
+    position:absolute; top:6px; right:6px;
+    width: 20px; height:20px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cell .vid-badge svg{ width:14px; height:14px; fill: rgba(255,255,255,0.9); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
+  .cell.placeholder{ display:flex; align-items:center; justify-content:center; font-size:11px; color: var(--ink-dim); text-align:center; padding:8px; }
+
+  footer.end{ padding: 60px 28px; text-align:center; color: var(--ink-dim); font-size:13px; }
+
+  /* ---------- Viewer ---------- */
+  #viewer{
+    position:fixed; inset:0;
+    background: #000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index: 50;
+  }
+  #viewer.active{ display:flex; }
+  #viewer .media-wrap{
+    max-width: 92vw; max-height: 84vh;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #viewer img, #viewer video{
+    max-width: 92vw; max-height: 84vh;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  #viewer .v-date{
+    position:absolute; top: 24px; left: 28px;
+    font-family:'Fraunces', serif;
+    font-size: 18px;
+    color: var(--ink);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    z-index: 10;
+  }
+  #viewer .v-location{
+    position:absolute; top: 50px; left: 28px;
+    font-size: 13px;
+    color: var(--brass);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    max-width: 60vw;
+    z-index: 10;
+  }
+  #viewer .v-close{
+    position:absolute; top:20px; right:24px;
+    background:none; border:none; color: var(--ink);
+    font-size: 28px; cursor:pointer; line-height:1;
+    z-index: 10;
+  }
+  #viewer .v-nav{
+    position:absolute; top:0; bottom:0; width: 18%;
+    background:none; border:none; cursor:pointer;
+    color: rgba(255,255,255,0.6);
+    font-size: 32px;
+    display:flex; align-items:center;
+    z-index: 1;
+  }
+  #viewer .v-prev{ left:0; justify-content:flex-start; padding-left:14px; }
+  #viewer .v-next{ right:0; justify-content:flex-end; padding-right:14px; }
+  #viewer .v-nav:hover{ color: rgba(255,255,255,0.95); }
+
+  @media (max-width: 720px){
+    #rail{
+      position: static; height:auto; width:100%;
+      flex-direction:row; overflow-x:auto; border-right:none;
+      border-bottom:1px solid var(--hairline); padding: 10px 12px;
+    }
+    #app.active{ flex-direction:column; }
+    #rail button{ width:auto; padding: 6px 10px; white-space:nowrap; }
+    header.top{ padding: 14px 16px; }
+    .month-section{ padding: 18px 16px 0; }
+    .month-section h2{ top: 54px; }
+    #flashback{ margin: 16px 16px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="landing">
+  <div class="mark serif">Memory Lane</div>
+  <p>Point this at the <code>memories</code> folder you already have on your Mac. Everything renders right here in your browser — nothing is uploaded, nothing leaves your computer.</p>
+  <button class="pick-btn" id="pick-btn">Choose your memories folder</button>
+  <input type="file" id="folder-input" webkitdirectory multiple>
+  <div class="loading" id="loading">Reading your files…</div>
+  <div class="privacy-note">Runs 100% locally. Reload the page and it's gone — nothing is saved, tracked, or sent anywhere.</div>
+</div>
+
+<div id="app">
+  <nav id="rail"></nav>
+  <main id="main">
+    <header class="top">
+      <h1 class="serif">Memory Lane</h1>
+      <span class="count" id="item-count"></span>
+    </header>
+    <div id="flashback">
+      <p class="fb-title serif">On this day…</p>
+      <div class="fb-strip" id="fb-strip"></div>
+    </div>
+    <div id="sections"></div>
+    <footer class="end">That's everything — for now. 🌙</footer>
+  </main>
+</div>
+
+<div id="viewer">
+  <button class="v-close" id="v-close">&times;</button>
+  <span class="v-date serif" id="v-date"></span>
+  <span class="v-location" id="v-location"></span>
+  <button class="v-nav v-prev" id="v-prev">&#8249;</button>
+  <div class="media-wrap" id="media-wrap"></div>
+  <button class="v-nav v-next" id="v-next">&#8250;</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.min.js"></script>
+<script>
+const IMG_EXT = ['jpg','jpeg','png','gif','webp','heic','heif'];
+const VID_EXT = ['mp4','mov','m4v','webm'];
+
+let items = []; // { file, url, date (Date obj), type: 'image'|'video' }
+
+function parseDate(filename, fallback){
+  const m = filename.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){
+    return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]));
+  }
+  return fallback;
+}
+
+function extOf(name){
+  const parts = name.split('.');
+  return parts.length > 1 ? parts.pop().toLowerCase() : '';
+}
+
+document.getElementById('pick-btn').addEventListener('click', () => {
+  document.getElementById('folder-input').click();
+});
+
+document.getElementById('folder-input').addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  document.getElementById('loading').classList.add('active');
+  setTimeout(() => processFiles(files), 30);
+});
+
+function processFiles(files){
+  items = [];
+  for(const file of files){
+    const lower = file.name.toLowerCase();
+    if(lower.includes('overlay')) continue;
+    const ext = extOf(lower);
+    let type = null;
+    if(IMG_EXT.includes(ext)) type = 'image';
+    else if(VID_EXT.includes(ext)) type = 'video';
+    else continue;
+
+    const date = parseDate(file.name, new Date(file.lastModified));
+    items.push({
+      file,
+      url: URL.createObjectURL(file),
+      date,
+      type,
+      ext
+    });
+  }
+  items.sort((a,b) => b.date - a.date);
+  buildApp();
+}
+
+function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function monthLabel(d){ return d.toLocaleString('default',{month:'long'}); }
+
+function buildApp(){
+  document.getElementById('landing').style.display = 'none';
+  const app = document.getElementById('app');
+  app.classList.add('active');
+
+  document.getElementById('item-count').textContent = items.length + ' memories';
+
+  // group by month
+  const groups = new Map();
+  for(const it of items){
+    const key = monthKey(it.date);
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  }
+
+  const sectionsEl = document.getElementById('sections');
+  sectionsEl.innerHTML = '';
+  const rail = document.getElementById('rail');
+  rail.innerHTML = '';
+  const seenYears = new Set();
+
+  let idx = 0;
+  const flatOrder = []; // parallel to items but in DOM order for viewer nav
+
+  for(const [key, groupItems] of groups){
+    const [y, m] = key.split('-');
+    const year = parseInt(y);
+    const section = document.createElement('div');
+    section.className = 'month-section';
+    section.id = 'sec-' + key;
+    const h2 = document.createElement('h2');
+    h2.innerHTML = `${monthLabel(groupItems[0].date)} <span class="yr">${year}</span>`;
+    section.appendChild(h2);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    for(const it of groupItems){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.idx = flatOrder.length;
+      flatOrder.push(it);
+
+      const media = document.createElement(it.type === 'video' ? 'video' : 'img');
+      media.dataset.src = it.url;
+      media.loading = 'lazy';
+      if(it.type === 'video'){ media.muted = true; media.playsInline = true; }
+      cell.appendChild(media);
+
+      if(it.type === 'video'){
+        const badge = document.createElement('div');
+        badge.className = 'vid-badge';
+        badge.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        cell.appendChild(badge);
+      }
+
+      cell.addEventListener('click', () => openViewer(parseInt(cell.dataset.idx)));
+      grid.appendChild(cell);
+    }
+
+    section.appendChild(grid);
+    sectionsEl.appendChild(section);
+
+    if(!seenYears.has(year)){
+      seenYears.add(year);
+      const btn = document.createElement('button');
+      btn.textContent = year;
+      btn.addEventListener('click', () => {
+        document.getElementById('sec-' + key).scrollIntoView({behavior:'smooth', block:'start'});
+      });
+      rail.appendChild(btn);
+    }
+  }
+
+  window.__flatOrder = flatOrder;
+  lazyLoadObserve();
+  buildFlashback(flatOrder);
+}
+
+function lazyLoadObserve(){
+  const obs = new IntersectionObserver((entries) => {
+    for(const entry of entries){
+      if(entry.isIntersecting){
+        const el = entry.target;
+        if(el.dataset.src && !el.src){
+          el.src = el.dataset.src;
+          el.onerror = () => {
+            const cell = el.parentElement;
+            cell.classList.add('placeholder');
+            cell.innerHTML = (el.tagName === 'VIDEO' ? '🎞' : '🖼') + '<br>' + 'Preview unavailable';
+          };
+        }
+        obs.unobserve(el);
+      }
+    }
+  }, { rootMargin: '200px' });
+
+  document.querySelectorAll('.cell img, .cell video').forEach(el => obs.observe(el));
+}
+
+function buildFlashback(flatOrder){
+  const today = new Date();
+  const matches = flatOrder
+    .map((it, i) => ({it, i}))
+    .filter(({it}) => it.date.getMonth() === today.getMonth() &&
+                        it.date.getDate() === today.getDate() &&
+                        it.date.getFullYear() !== today.getFullYear());
+
+  const fb = document.getElementById('flashback');
+  if(matches.length === 0){ fb.classList.remove('active'); return; }
+
+  fb.classList.add('active');
+  const strip = document.getElementById('fb-strip');
+  strip.innerHTML = '';
+  for(const {it, i} of matches){
+    const yearsAgo = today.getFullYear() - it.date.getFullYear();
+    const wrap = document.createElement('div');
+    wrap.className = 'fb-item';
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className = 'thumb-wrap';
+    const media = document.createElement(it.type === 'video' ? 'video' : 'img');
+    media.src = it.url;
+    if(it.type === 'video'){ media.muted = true; }
+    thumbWrap.appendChild(media);
+    wrap.appendChild(thumbWrap);
+    const label = document.createElement('div');
+    label.className = 'fb-label';
+    label.textContent = yearsAgo + (yearsAgo === 1 ? ' year ago' : ' years ago');
+    wrap.appendChild(label);
+    wrap.addEventListener('click', () => openViewer(i));
+    strip.appendChild(wrap);
+  }
+}
+
+// ---------- Location ----------
+const geocodeCache = new Map(); // "lat,lon" (rounded) -> label string
+const gpsCache = new Map(); // item index -> {lat, lon} or null
+
+function findAtom(bytes, view, fourCC, start, end) {
+  let offset = start;
+  while (offset + 8 <= end) {
+    const size = view.getUint32(offset);
+    const type = String.fromCharCode(bytes[offset+4], bytes[offset+5], bytes[offset+6], bytes[offset+7]);
+    if (size < 8) break;
+    if (type === fourCC) return { start: offset + 8, end: offset + size };
+    offset += size;
+  }
+  return null;
+}
+
+function extractMp4Gps(buffer) {
+  try {
+    const bytes = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    const moov = findAtom(bytes, view, 'moov', 0, bytes.length);
+    if (!moov) return null;
+    const udta = findAtom(bytes, view, 'udta', moov.start, moov.end);
+    if (!udta) return null;
+    // the location atom's fourCC is 0xA9 'x' 'y' 'z' (copyright-style tag "\xa9xyz")
+    let offset = udta.start;
+    while (offset + 8 <= udta.end) {
+      const size = view.getUint32(offset);
+      const b4 = bytes[offset+4];
+      const isXyz = (b4 === 0xA9) && bytes[offset+5]===0x78 && bytes[offset+6]===0x79 && bytes[offset+7]===0x7A;
+      if (size < 8) break;
+      if (isXyz) {
+        // data starts after a 4-byte length/lang header (QuickTime string atom)
+        const dataStart = offset + 8 + 4;
+        const dataEnd = offset + size;
+        const str = new TextDecoder('utf-8').decode(bytes.slice(dataStart, dataEnd));
+        const m = str.match(/([+-]\d+\.\d+)([+-]\d+\.\d+)/);
+        if (m) return { lat: parseFloat(m[1]), lon: parseFloat(m[2]) };
+      }
+      offset += size;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getGpsForItem(item, idx) {
+  if (gpsCache.has(idx)) return gpsCache.get(idx);
+  let coords = null;
+  try {
+    if (item.type === 'image' && window.exifr) {
+      const gps = await exifr.gps(item.file);
+      if (gps && typeof gps.latitude === 'number') {
+        coords = { lat: gps.latitude, lon: gps.longitude };
+      }
+    } else if (item.type === 'video') {
+      const buf = await item.file.arrayBuffer();
+      coords = extractMp4Gps(buf);
+    }
+  } catch (e) {
+    coords = null;
+  }
+  gpsCache.set(idx, coords);
+  return coords;
+}
+
+async function reverseGeocode(lat, lon) {
+  const key = lat.toFixed(2) + ',' + lon.toFixed(2);
+  if (geocodeCache.has(key)) return geocodeCache.get(key);
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`);
+    const data = await res.json();
+    const a = data.address || {};
+    const place = a.city || a.town || a.village || a.suburb || a.county || '';
+    const region = a.state || a.province || '';
+    let label = [place, region].filter(Boolean).join(', ');
+    if (!label) label = a.country || `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+    geocodeCache.set(key, label);
+    return label;
+  } catch (e) {
+    const fallback = `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+    geocodeCache.set(key, fallback);
+    return fallback;
+  }
+}
+
+async function updateViewerLocation(idx) {
+  const locEl = document.getElementById('v-location');
+  locEl.textContent = '';
+  const item = window.__flatOrder[idx];
+  const coords = await getGpsForItem(item, idx);
+  // bail if the viewer moved on to a different item while we were working
+  if (currentIdx !== idx) return;
+  if (!coords) return;
+  locEl.textContent = 'Locating...';
+  const label = await reverseGeocode(coords.lat, coords.lon);
+  if (currentIdx !== idx) return;
+  locEl.textContent = label;
+}
+
+// ---------- Viewer ----------
+let currentIdx = 0;
+
+function openViewer(idx){
+  currentIdx = idx;
+  renderViewer();
+  document.getElementById('viewer').classList.add('active');
+}
+
+function closeViewer(){
+  document.getElementById('viewer').classList.remove('active');
+  document.getElementById('media-wrap').innerHTML = '';
+}
+
+function renderViewer(){
+  const it = window.__flatOrder[currentIdx];
+  const wrap = document.getElementById('media-wrap');
+  wrap.innerHTML = '';
+  let el;
+  if(it.type === 'video'){
+    el = document.createElement('video');
+    el.src = it.url;
+    el.controls = true;
+    el.autoplay = true;
+    el.loop = true;
+  } else {
+    el = document.createElement('img');
+    el.src = it.url;
+  }
+  wrap.appendChild(el);
+  document.getElementById('v-date').textContent = it.date.toLocaleDateString('default', {year:'numeric', month:'long', day:'numeric'});
+  updateViewerLocation(currentIdx);
+}
+
+document.getElementById('v-close').addEventListener('click', closeViewer);
+document.getElementById('v-prev').addEventListener('click', () => nav(-1));
+document.getElementById('v-next').addEventListener('click', () => nav(1));
+
+function nav(dir){
+  const n = window.__flatOrder.length;
+  currentIdx = (currentIdx + dir + n) % n;
+  renderViewer();
+}
+
+document.addEventListener('keydown', (e) => {
+  if(!document.getElementById('viewer').classList.contains('active')) return;
+  if(e.key === 'ArrowLeft') nav(-1);
+  if(e.key === 'ArrowRight') nav(1);
+  if(e.key === 'Escape') closeViewer();
+});
+
+// swipe support
+let touchStartX = null;
+document.getElementById('viewer').addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+});
+document.getElementById('viewer').addEventListener('touchend', (e) => {
+  if(touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if(Math.abs(dx) > 50) nav(dx > 0 ? -1 : 1);
+  touchStartX = null;
+});
+
+document.getElementById('viewer').addEventListener('click', (e) => {
+  if(e.target.id === 'viewer') closeViewer();
+});
+</script>
+</body>
+</html>
